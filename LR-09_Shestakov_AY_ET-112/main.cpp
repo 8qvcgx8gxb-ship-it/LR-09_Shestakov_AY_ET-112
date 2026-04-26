@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cstring>
 #include <cmath>
+#include <fstream>
 using namespace std;
 
 enum FilmType {
@@ -194,8 +195,83 @@ void printFilteredWrapper(const Film arr[], int n,
     }
 }
 
+// Задание 1 из 10 практики
+void writeBudgetToTextFile(const Film arr[], int size, const char* filename) {
+    ofstream fout;
+    fout.open(filename);
+    if (!fout.is_open()) {
+        cout << "Ошибка: не удалось открыть файл для записи: " << filename << "\n";
+        return;
+    }
+    for (int i = 0; i < size; i++) {
+        fout << arr[i].title << "\n" << arr[i].budget << "\n";
+    }
+    fout.close();
+    cout << "\n[Текст. файл] Данные записаны в: " << filename << "\n";
+}
+
+void readBudgetFromTextFile(Film arr[], int size, const char* filename) {
+    ifstream fin;
+    fin.open(filename);
+    if (!fin.is_open()) {
+        cout << "Ошибка: не удалось открыть файл для чтения: " << filename << "\n";
+        return;
+    }
+
+    char titleFromFile[100];
+    double budgetFromFile;
+
+    while (!fin.eof()) {
+        fin.getline(titleFromFile, 100);
+        if (fin.fail()) break;
+        fin >> budgetFromFile;
+        fin.ignore();
+        if (fin.fail()) break;
+        for (int i = 0; i < size; i++) {
+            if (strcmp(arr[i].title, titleFromFile) == 0) {
+                arr[i].budget = budgetFromFile;
+            }
+        }
+    }
+
+    fin.close();
+    cout << "[Текст. файл] Данные прочитаны из: " << filename << "\n";
+}
+
+//Задание 2 из 10 практики
+void writeBinaryFile(const Film arr[], int size, const char* filename) {
+    ofstream out(filename, ios::binary | ios::out);
+    if (!out.is_open()) {
+        cout << "Ошибка: не удалось открыть бинарный файл для записи: " << filename << "\n";
+        return;
+    }
+    out.write((char*)&size, sizeof(int));
+    for (int i = 0; i < size; i++) {
+        out.write((char*)&arr[i], sizeof(Film));
+    }
+    out.close();
+    cout << "\n[Бин. файл] Массив структур записан в: " << filename << "\n";
+}
+
+int readBinaryFile(Film dest[], const char* filename) {
+    fstream in(filename, ios::binary | ios::in);
+    if (!in.is_open()) {
+        cout << "Ошибка: не удалось открыть бинарный файл для чтения: " << filename << "\n";
+        return 0;
+    }
+    int size = 0;
+    in.read((char*)&size, sizeof(int));
+    for (int i = 0; i < size; i++) {
+        in.read((char*)&dest[i], sizeof(Film));
+    }
+    in.close();
+    cout << "[Бин. файл] Прочитано " << size << " записей из: " << filename << "\n";
+    return size;
+}
+
 int main() {
-    // ===== Массив из 20 фильмов =====
+    setlocale(LC_ALL, "Russian");
+
     Film films[20] = {
         {"Moulin Rouge!",        {"Baz",      "Luhrmann"}, DRAMA,     2001, 127, 52.5,  7.6, "Nicole Kidman"},
         {"The Others",           {"Alejandro","Amenabar"}, HORROR,    2001, 101, 17.0,  7.6, "Nicole Kidman"},
@@ -220,6 +296,8 @@ int main() {
     };
     const int N = 20;
 
+    // Праткика 9
+
     printArray(films, N, "Исходный массив фильмов");
 
     Film kidmanFilms[20];
@@ -236,6 +314,32 @@ int main() {
     editFilm(films, N, "Gladiator", 115.0, 8.7, 157);
 
     printFilteredWrapper(films, N, THRILLER, "John");
+
+    // Практика 10 запись и чтение txt файла
+
+    cout << "\n\n===== ПРАКТИКА 10: ЗАДАНИЕ 1 (ТЕКСТОВЫЙ ФАЙЛ) =====\n";
+
+    writeBudgetToTextFile(films, N, "budget_data.txt");
+
+    films[0].budget = 0.0;
+    films[6].budget = 0.0;
+    cout << "До чтения из файла  — Moulin Rouge! бюджет: " << films[0].budget << " млн $\n";
+    cout << "До чтения из файла  — Gladiator! бюджет: " << films[6].budget << " млн $\n";
+    
+    readBudgetFromTextFile(films, N, "budget_data.txt");
+    cout << "После чтения из файла — Moulin Rouge! бюджет: " << films[0].budget << " млн $\n";
+    cout << "После чтения из файла — Gladiator бюджет:     " << films[6].budget << " млн $\n";
+
+    // Практика 10 запись и чтение бинарного файла
+
+    cout << "\n===== ПРАКТИКА 10: ЗАДАНИЕ 2 (БИНАРНЫЙ ФАЙЛ) =====\n";
+
+    writeBinaryFile(films, N, "films.bin");
+
+    Film loadedFilms[20];
+    int loadedCount = readBinaryFile(loadedFilms, "films.bin");
+
+    printArray(loadedFilms, loadedCount, "Фильмы, загруженные из бинарного файла");
 
     return 0;
 }
